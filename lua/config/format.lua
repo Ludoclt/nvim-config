@@ -2,55 +2,87 @@
 --
 -- LazyVim formats every buffer on save. On someone else's project without a
 -- formatter config, that rewrites whole files with our defaults and pollutes
--- the diff. This module looks upward from each file for a formatter config;
--- when none is found it sets `vim.b.autoformat = false` for that buffer.
+-- the diff. This module looks upward from each file for a config of the
+-- formatter of its filetype; when none is found it sets
+-- `vim.b.autoformat = false` for that buffer. Filetypes not listed here are
+-- never formatted on save.
 --
 -- Override per buffer with <leader>uF, globally with <leader>uf.
 -- Formatting by hand (<leader>cf) always works.
 
 local M = {}
 
--- Files whose presence means "this project has a formatter style".
-M.markers = {
-  -- C / C++
-  ".clang-format",
-  "_clang-format",
-  -- Rust: rustfmt is the ecosystem default, a Cargo project is enough
-  "rustfmt.toml",
-  ".rustfmt.toml",
-  "Cargo.toml",
-  -- Python
-  "ruff.toml",
-  ".ruff.toml",
-  -- JavaScript / TypeScript
-  ".prettierrc",
-  ".prettierrc.json",
-  ".prettierrc.json5",
-  ".prettierrc.yaml",
-  ".prettierrc.yml",
-  ".prettierrc.toml",
-  ".prettierrc.js",
-  ".prettierrc.cjs",
-  ".prettierrc.mjs",
-  "prettier.config.js",
-  "prettier.config.cjs",
-  "prettier.config.mjs",
-  "prettier.config.ts",
-  "biome.json",
-  "biome.jsonc",
-  -- Lua
-  "stylua.toml",
-  ".stylua.toml",
-  -- C#
-  ".csharpierrc",
-  ".csharpierrc.json",
-  ".csharpierrc.yaml",
-}
+---@class config.FormatRule
+---@field filetypes string[]
+---@field files? string[] presence of one of these files is enough
+---@field content? table<string, string[]> these files count when they contain one of the Lua patterns
 
--- Files that only count when they contain one of these Lua patterns.
-M.content_markers = {
-  ["pyproject.toml"] = { "%[tool%.ruff", "%[tool%.black" },
-  ["package.json"] = { '"prettier"' },
+---@type config.FormatRule[]
+M.rules = {
+  {
+    filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto" },
+    files = { ".clang-format", "_clang-format" },
+  },
+  {
+    filetypes = { "cmake" },
+    files = { ".cmake-format", ".cmake-format.yaml", ".cmake-format.yml", ".cmake-format.json", ".cmake-format.py" },
+  },
+  {
+    -- rustfmt is the ecosystem default: a Cargo project is enough
+    filetypes = { "rust" },
+    files = { "rustfmt.toml", ".rustfmt.toml", "Cargo.toml" },
+  },
+  {
+    filetypes = { "python" },
+    files = { "ruff.toml", ".ruff.toml" },
+    content = { ["pyproject.toml"] = { "%[tool%.ruff", "%[tool%.black" } },
+  },
+  {
+    filetypes = {
+      "javascript",
+      "javascriptreact",
+      "typescript",
+      "typescriptreact",
+      "vue",
+      "svelte",
+      "astro",
+      "json",
+      "jsonc",
+      "css",
+      "scss",
+      "less",
+      "html",
+      "yaml",
+      "markdown",
+      "graphql",
+    },
+    files = {
+      ".prettierrc",
+      ".prettierrc.json",
+      ".prettierrc.json5",
+      ".prettierrc.yaml",
+      ".prettierrc.yml",
+      ".prettierrc.toml",
+      ".prettierrc.js",
+      ".prettierrc.cjs",
+      ".prettierrc.mjs",
+      "prettier.config.js",
+      "prettier.config.cjs",
+      "prettier.config.mjs",
+      "prettier.config.ts",
+      "biome.json",
+      "biome.jsonc",
+    },
+    content = { ["package.json"] = { '"prettier"' } },
+  },
+  {
+    filetypes = { "lua" },
+    files = { "stylua.toml", ".stylua.toml" },
+  },
+  {
+    filetypes = { "cs" },
+    files = { ".csharpierrc", ".csharpierrc.json", ".csharpierrc.yaml" },
+  },
 }
 
 local function contains(file, patterns)
@@ -68,16 +100,33 @@ local function contains(file, patterns)
   return false
 end
 
+---@param ft string
+---@return config.FormatRule?
+function M.rule(ft)
+  for _, rule in ipairs(M.rules) do
+    if vim.tbl_contains(rule.filetypes, ft) then
+      return rule
+    end
+  end
+end
+
+--- Whether a project above `dir` has a formatter config for filetype `ft`.
 ---@param dir string
+---@param ft string
 ---@return boolean
-function M.has_config(dir)
+function M.has_config(dir, ft)
+  local rule = M.rule(ft)
+  if not rule then
+    return false
+  end
   local opts = { upward = true, path = dir, stop = vim.uv.os_homedir() }
-  if #vim.fs.find(M.markers, vim.tbl_extend("force", opts, { limit = 1 })) > 0 then
+  if rule.files and #vim.fs.find(rule.files, vim.tbl_extend("force", opts, { limit = 1 })) > 0 then
     return true
   end
-  local names = vim.tbl_keys(M.content_markers)
-  for _, file in ipairs(vim.fs.find(names, vim.tbl_extend("force", opts, { limit = math.huge }))) do
-    if contains(file, M.content_markers[vim.fs.basename(file)]) then
+  local content = rule.content or {}
+  local found = vim.fs.find(vim.tbl_keys(content), vim.tbl_extend("force", opts, { limit = math.huge }))
+  for _, file in ipairs(found) do
+    if contains(file, content[vim.fs.basename(file)]) then
       return true
     end
   end
@@ -90,16 +139,17 @@ function M.apply(buf)
     return
   end
   local name = vim.api.nvim_buf_get_name(buf)
-  if name == "" then
+  if name == "" or vim.bo[buf].filetype == "" then
     return
   end
-  if not M.has_config(vim.fs.dirname(vim.fs.abspath(name))) then
+  if not M.has_config(vim.fs.dirname(vim.fs.abspath(name)), vim.bo[buf].filetype) then
     vim.b[buf].autoformat = false
   end
 end
 
 function M.setup()
-  vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile" }, {
+  -- FileType rather than BufRead: the decision depends on the filetype.
+  vim.api.nvim_create_autocmd("FileType", {
     group = vim.api.nvim_create_augroup("config_format_detect", { clear = true }),
     callback = function(ev)
       M.apply(ev.buf)

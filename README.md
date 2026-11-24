@@ -48,11 +48,12 @@ Language servers and tools are installed by Mason on first use (`:Mason`).
 
 LazyVim formats every file on save. On other people's projects that rewrites
 whole files and pollutes the diff, so here format on save only runs when the
-project has a formatter config, found by walking up from the file:
-`.clang-format`, `rustfmt.toml` or `Cargo.toml`, `ruff.toml` or a
-`pyproject.toml` with `[tool.ruff]`/`[tool.black]`, a Prettier or Biome
-config, `stylua.toml`, `.csharpierrc`. The full list is in
-`lua/config/format.lua`.
+project has a config for the formatter of that filetype, found by walking up
+from the file: `.clang-format` for C/C++, `.cmake-format.*` for CMake,
+`rustfmt.toml` or `Cargo.toml` for Rust, `ruff.toml` or a `pyproject.toml`
+with `[tool.ruff]`/`[tool.black]` for Python, a Prettier or Biome config for
+web files, `stylua.toml` for Lua, `.csharpierrc` for C#. Other filetypes are
+not formatted on save. The rules are in `lua/config/format.lua`.
 
 - `<leader>cf` formats by hand, anywhere.
 - `<leader>uF` toggles format on save for the current buffer (use it to turn
