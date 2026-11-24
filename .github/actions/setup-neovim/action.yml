@@ -1,0 +1,17 @@
+name: Set up Neovim
+description: Install Neovim stable and the tools the smoke test needs
+runs:
+  using: composite
+  steps:
+    - name: Install Neovim stable, tree-sitter CLI, ripgrep and fd
+      shell: bash
+      run: |
+        curl -fsSL https://github.com/neovim/neovim/releases/download/stable/nvim-linux-x86_64.tar.gz \
+          | sudo tar xz -C /opt
+        echo /opt/nvim-linux-x86_64/bin >> "$GITHUB_PATH"
+        sudo apt-get update -q
+        sudo apt-get install -y -q ripgrep fd-find
+        sudo ln -sf "$(command -v fdfind)" /usr/local/bin/fd
+        npm install -g tree-sitter-cli
+        /opt/nvim-linux-x86_64/bin/nvim --version | head -n1
+        tree-sitter --version

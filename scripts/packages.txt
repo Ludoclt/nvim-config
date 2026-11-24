@@ -1,0 +1,26 @@
+# System packages used by this config, read by scripts/bootstrap.sh.
+#
+# group | check | zypper (openSUSE) | pacman (Arch) | min version | purpose
+#
+# check: a command that must be on PATH, or `!<shell test>` for anything else.
+# min version: compared with the first x.y.z printed by `<command> --version`.
+# Language servers, linters and formatters are not listed here: Mason
+# installs them per user, at the same versions on every machine.
+
+core | nvim     | neovim         | neovim          | 0.11.2 | the editor (LazyVim 15 minimum)
+core | git      | git            | git             |        | plugin manager, git integration
+core | curl     | curl           | curl            |        | downloads (plugins, parsers, Mason)
+core | tar      | tar            | tar             |        | parser and Mason archives
+core | gzip     | gzip           | gzip            |        | parser and Mason archives
+core | unzip    | unzip          | unzip           |        | Mason archives
+core | rg       | ripgrep        | ripgrep         |        | live grep (<leader>/)
+core | fd       | fd             | fd              |        | file finder (<leader><space>)
+core | fzf      | fzf            | fzf             |        | fuzzy finding (checked by :checkhealth lazyvim)
+core | lazygit  | lazygit        | lazygit         |        | git UI (<leader>gg)
+core | tree-sitter | tree-sitter | tree-sitter-cli | 0.26.1 | builds treesitter parsers (nvim-treesitter main)
+core | cc       | gcc            | gcc             |        | compiles treesitter parsers
+core | make     | make           | make            |        | builds some plugins
+core | node     | nodejs-default | nodejs          |        | Mason: language servers written in JavaScript
+core | npm      | npm-default    | npm             |        | Mason: language servers written in JavaScript
+core | !python3 -c 'import venv, ensurepip' | python3 | python | | Mason: tools written in Python (needs venv)
+core | wl-copy  | wl-clipboard   | wl-clipboard    |        | system clipboard on Wayland
