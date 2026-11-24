@@ -11,3 +11,7 @@ vim.g.azerty = true
 if vim.g.azerty then
   vim.g.maplocalleader = "é"
 end
+
+-- Format on save stays enabled globally, but lua/config/format.lua turns it off
+-- for buffers whose project has no formatter config (see README).
+vim.g.autoformat = true
