@@ -95,6 +95,28 @@ local function run()
   check("ci( still changes inside parentheses", edit("ci(x<Esc>", 5) == "foo(x) end")
   check("dt) still deletes up to the parenthesis", edit("dt)", 0) == ") end")
 
+  -- Tables after `<!-- check: global -->` in the cheat sheet list LazyVim
+  -- keymaps: each key of their first column must still exist after updates.
+  io.stdout:write("cheat sheet\n")
+  local sheet = vim.fs.joinpath(vim.fn.stdpath("config"), "docs", "CHEATSHEET.md")
+  local absent, checked, in_table = {}, 0, false
+  for _, line in ipairs(vim.fn.readfile(sheet)) do
+    if line:match("^<!%-%- check: global %-%->") then
+      in_table = true
+    elseif in_table and not line:match("^|") then
+      in_table = false
+    elseif in_table and not line:match("^| %-") and not line:match("^| Keys") then
+      local cell = line:match("^|([^|]*)|")
+      for key in cell:gmatch("`([^`]+)`") do
+        checked = checked + 1
+        if vim.fn.maparg(key, "n") == "" then
+          absent[#absent + 1] = key
+        end
+      end
+    end
+  end
+  check(("%d documented keymaps exist"):format(checked), checked > 0 and #absent == 0, table.concat(absent, " "))
+
   io.stdout:write("format on save detection\n")
   local format = require("config.format")
   local root = vim.fn.tempname()
