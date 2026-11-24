@@ -1,0 +1,11 @@
+# Starting point for C / C++ projects: LLVM style with a 4-space indent.
+# Keep this file in the project: it turns on format on save in Neovim and
+# makes every contributor's formatter agree. Options:
+# https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 100
+AllowShortFunctionsOnASingleLine: Empty
+PointerAlignment: Right
+SortIncludes: CaseSensitive
+IncludeBlocks: Preserve
