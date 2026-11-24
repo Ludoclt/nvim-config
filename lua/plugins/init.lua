@@ -1,0 +1,3 @@
+-- Plugin specs, one file per area (added step by step): cpp.lua, hdl.lua, ...
+-- LazyVim extras are enabled in lazyvim.json (`:LazyExtras` edits it).
+return {}
