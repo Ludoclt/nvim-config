@@ -51,7 +51,7 @@ while IFS= read -r line; do
     printf '  MISSING  %-15s %s\n' "$package" "$purpose"
     missing+=("$package")
   elif [[ -n "$min" ]]; then
-    have="$("$check" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || true)"
+    have="$("$check" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -n1 || true)"
     if [[ -n "$have" ]] && version_ge "$have" "$min"; then
       printf '  ok       %-15s %s (%s)\n' "$package" "$purpose" "$have"
     else

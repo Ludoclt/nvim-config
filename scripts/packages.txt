@@ -3,7 +3,7 @@
 # group | check | zypper (openSUSE) | pacman (Arch) | min version | purpose
 #
 # check: a command that must be on PATH, or `!<shell test>` for anything else.
-# min version: compared with the first x.y.z printed by `<command> --version`.
+# min version: compared with the first x.y[.z] printed by `<command> --version`.
 # Language servers, linters and formatters are not listed here: Mason
 # installs them per user, at the same versions on every machine.
 
