@@ -3,6 +3,8 @@
 My Neovim configuration, built on [LazyVim](https://github.com/LazyVim/LazyVim),
 shared between my laptop (openSUSE Tumbleweed) and my desktop (Arch Linux).
 
+- **Cheat sheet** for daily and advanced use, with a learning path
+  ([docs/CHEATSHEET.md](docs/CHEATSHEET.md)).
 - **AZERTY layer**: LazyVim's AltGr-heavy keys get direct aliases
   ([docs/AZERTY.md](docs/AZERTY.md)).
 - **Same plugins everywhere**: `lazy-lock.json` pins every plugin; updates come
@@ -69,7 +71,7 @@ scripts/bootstrap.sh     system packages (scripts/packages.txt)
 scripts/sync.sh          pull + install locked plugin versions
 scripts/smoke-test.sh    headless test, also run by CI
 tests/smoke.lua          the checks
-docs/                    AZERTY layer reference
+docs/                    cheat sheet, AZERTY layer reference
 ```
 
 ## Test
@@ -80,7 +82,8 @@ scripts/smoke-test.sh
 
 Runs Neovim headless in isolated directories under `.tests/` (it never touches
 the real `~/.local/share/nvim`), installs the locked plugins and parsers, then
-checks startup errors, the AZERTY aliases and the format rule. CI runs it on
+checks startup errors, the AZERTY aliases, the keymaps listed in the cheat
+sheet and the format rule. CI runs it on
 every push to `main` and on every pull request.
 
 ## One-time GitHub setting
