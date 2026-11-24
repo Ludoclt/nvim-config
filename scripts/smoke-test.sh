@@ -6,7 +6,8 @@
 #   scripts/smoke-test.sh --update   update plugins (rewrites lazy-lock.json), test
 #
 # Set SMOKE_HOME to reuse the same plugin cache across runs (default: .tests/).
-# Set SMOKE_SKIP_PARSERS=1 to skip treesitter parsers (offline environments).
+# Set SMOKE_OFFLINE=1 where downloads are blocked: treesitter parsers and Mason
+# packages are not installed, and checks that need them are skipped.
 set -euo pipefail
 
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -22,10 +23,12 @@ ln -sfn "$repo" "$XDG_CONFIG_HOME/nvim"
 echo "==> plugins: Lazy $mode"
 nvim --headless "+Lazy! $mode" +qa
 
-if [[ "${SMOKE_SKIP_PARSERS:-0}" != 1 ]]; then
+if [[ "${SMOKE_OFFLINE:-0}" != 1 ]]; then
   echo "==> treesitter parsers"
   nvim --headless \
     "+lua require('nvim-treesitter').install(LazyVim.opts('nvim-treesitter').ensure_installed):wait(600000)" +qa
+  echo "==> Mason packages"
+  (cd "$repo" && nvim --headless -c "luafile tests/install-tools.lua")
 fi
 
 echo "==> smoke test"
