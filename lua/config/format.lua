@@ -5,7 +5,7 @@
 -- the diff. This module looks upward from each file for a formatter config;
 -- when none is found it sets `vim.b.autoformat = false` for that buffer.
 --
--- Override per buffer with <leader>uf, globally with <leader>uF.
+-- Override per buffer with <leader>uF, globally with <leader>uf.
 -- Formatting by hand (<leader>cf) always works.
 
 local M = {}

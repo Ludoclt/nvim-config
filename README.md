@@ -53,8 +53,8 @@ config, `stylua.toml`, `.csharpierrc`. The full list is in
 `lua/config/format.lua`.
 
 - `<leader>cf` formats by hand, anywhere.
-- `<leader>uf` toggles format on save for the current buffer, `<leader>uF`
-  globally.
+- `<leader>uF` toggles format on save for the current buffer (use it to turn
+  it on in a project without a formatter config), `<leader>uf` globally.
 - `:LazyFormatInfo` shows the state and the formatters for a buffer.
 
 ## Layout
