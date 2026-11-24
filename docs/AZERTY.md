@@ -46,6 +46,10 @@ Press `(` or `)` and wait: which-key lists everything available.
   flash (`s`) usually get there faster.
 - `` ` `` (exact mark position): `'` jumps to the mark's line and is a direct key.
 - `~` (toggle case), `#` (search word backwards), `|` (column): rare enough.
-- `<leader>|` (split right): use `<leader>wv` instead.
+- `<leader>|` (split right): use `<C-w>v` instead.
+- `]]` / `[[` (next / previous use of the symbol under the cursor): `))` does
+  not work: while Vim completes a mapping, it does not apply the alias to the
+  second key. Use `<A-n>` / `<A-p>`, which LazyVim maps to the same jump
+  (wrapping around at the end of the file).
 
 Free direct keys left for later: `è`, `ç`, `²`.
