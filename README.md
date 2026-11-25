@@ -18,8 +18,9 @@ shared between my laptop (openSUSE Tumbleweed) and my desktop (Arch Linux).
 | C / C++                 | clangd, clang-format, codelldb; make and CMake tasks          | ready  |
 | CMake                   | neocmakelsp, cmakelint, cmake-format                          | ready  |
 | Embedded (Cortex-M...)  | clangd with cross compilers, OpenOCD, GDB remote debugging    | ready  |
-| Verilog / VHDL          |                                                               | next   |
-| Python, web, Java, C#, Rust |                                                           | later  |
+| Verilog / SystemVerilog | verible (lint, format, navigation), Verilator lint            | ready  |
+| VHDL                    | vhdl_ls (rust_hdl), VSG (format, style lint)                  | ready  |
+| Python, web, Java, C#, Rust |                                                           | next   |
 
 How to use them day to day: [docs/CHEATSHEET.md](docs/CHEATSHEET.md), section
 "Build and debug".
@@ -32,6 +33,11 @@ overwriting existing ones:
 - `c`: a `.clang-format` (LLVM style, 4-space indent).
 - `embedded`: `.clang-format`, a `.clangd` that drops GCC-only flags clangd
   rejects, and an `openocd.cfg` with ST-Link, Pico and ESP32 examples.
+- `verilog`: `.rules.verible_lint` (lint rules), `.verible-format`
+  (formatter flags, turns on format on save) and `verilator.f` (Verilator
+  options for linting).
+- `vhdl`: `vhdl_ls.toml` (libraries for the language server) and
+  `vsg_config.yaml` (VSG style, turns on format on save).
 
 ## Install on a new machine
 
@@ -72,6 +78,7 @@ LazyVim formats every file on save. On other people's projects that rewrites
 whole files and pollutes the diff, so here format on save only runs when the
 project has a config for the formatter of that filetype, found by walking up
 from the file: `.clang-format` for C/C++, `.cmake-format.*` for CMake,
+`.verible-format` for Verilog, a VSG config for VHDL,
 `rustfmt.toml` or `Cargo.toml` for Rust, `ruff.toml` or a `pyproject.toml`
 with `[tool.ruff]`/`[tool.black]` for Python, a Prettier or Biome config for
 web files, `stylua.toml` for Lua, `.csharpierrc` for C#. Other filetypes are
@@ -90,7 +97,8 @@ lazy-lock.json           pinned plugin versions
 lazyvim.json             enabled LazyVim extras (:LazyExtras)
 lua/config/              options, keymaps, autocmds, AZERTY layer, format rule,
                          :Template command
-lua/plugins/             plugin specs, one file per area (cpp.lua, embedded.lua)
+lua/plugins/             plugin specs, one file per area (cpp.lua, embedded.lua,
+                         hdl.lua)
 templates/               files copied by :Template
 scripts/bootstrap.sh     system packages (scripts/packages.txt)
 scripts/sync.sh          pull + install locked plugin versions
