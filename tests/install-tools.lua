@@ -62,14 +62,24 @@ local function main()
   vim.wait(1000, function()
     return false
   end)
-  vim.wait(20 * 60 * 1000, function()
-    return not busy()
-  end, 500)
-  for _, pkg in ipairs(packages) do
-    if not pkg:is_installed() then
-      failed[#failed + 1] = pkg.name .. " (install failed, see :MasonLog)"
+  -- Done when nothing is installing and every executable is linked in
+  -- mason/bin: a package queued by LazyVim can look idle before it starts.
+  local bin_dir = vim.fs.joinpath(vim.fn.stdpath("data"), "mason", "bin")
+  local function missing()
+    local names = {}
+    for _, pkg in ipairs(packages) do
+      for bin in pairs(pkg.spec and pkg.spec.bin or {}) do
+        if vim.fn.executable(vim.fs.joinpath(bin_dir, bin)) == 0 then
+          names[#names + 1] = ("%s (%s)"):format(pkg.name, bin)
+        end
+      end
     end
+    return names
   end
+  vim.wait(20 * 60 * 1000, function()
+    return not busy() and #missing() == 0
+  end, 1000)
+  vim.list_extend(failed, missing())
 
   if #failed > 0 then
     io.stdout:write("Mason install failed: " .. table.concat(failed, ", ") .. "\n")
