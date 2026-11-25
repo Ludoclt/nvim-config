@@ -24,11 +24,13 @@ echo "==> plugins: Lazy $mode"
 nvim --headless "+Lazy! $mode" +qa
 
 if [[ "${SMOKE_OFFLINE:-0}" != 1 ]]; then
+  # Mason first: once its packages are in, later steps do not start background
+  # installs that Neovim would abort when it quits.
+  echo "==> Mason packages"
+  (cd "$repo" && nvim --headless -c "luafile tests/install-tools.lua")
   echo "==> treesitter parsers"
   nvim --headless \
     "+lua require('nvim-treesitter').install(LazyVim.opts('nvim-treesitter').ensure_installed):wait(600000)" +qa
-  echo "==> Mason packages"
-  (cd "$repo" && nvim --headless -c "luafile tests/install-tools.lua")
 fi
 
 echo "==> smoke test"
