@@ -56,30 +56,43 @@ local function main()
     end
     return false
   end
-  vim.wait(20 * 60 * 1000, function()
+  local function settle()
+    vim.wait(1000, function()
+      return false
+    end)
+    vim.wait(20 * 60 * 1000, function()
+      return not busy()
+    end, 500)
+  end
+
+  vim.wait(5 * 60 * 1000, function()
     return refreshed
   end, 200)
-  vim.wait(1000, function()
-    return false
-  end)
-  -- Done when nothing is installing and every executable is linked in
-  -- mason/bin: a package queued by LazyVim can look idle before it starts.
+
+  -- LazyVim installs some packages on its own: let those finish first. An
+  -- earlier Neovim that quit mid-install leaves a lockfile behind, and the
+  -- install then fails: retry those with force.
+  settle()
+  for _, pkg in ipairs(packages) do
+    if not pkg:is_installed() then
+      io.stdout:write("installing " .. pkg.name .. " (forced)\n")
+      pkg:install({ force = true })
+    end
+  end
+  settle()
+
   local bin_dir = vim.fs.joinpath(vim.fn.stdpath("data"), "mason", "bin")
-  local function missing()
-    local names = {}
-    for _, pkg in ipairs(packages) do
+  for _, pkg in ipairs(packages) do
+    if not pkg:is_installed() then
+      failed[#failed + 1] = pkg.name .. " (see :MasonLog)"
+    else
       for bin in pairs(pkg.spec and pkg.spec.bin or {}) do
         if vim.fn.executable(vim.fs.joinpath(bin_dir, bin)) == 0 then
-          names[#names + 1] = ("%s (%s)"):format(pkg.name, bin)
+          failed[#failed + 1] = ("%s (%s not in mason/bin)"):format(pkg.name, bin)
         end
       end
     end
-    return names
   end
-  vim.wait(20 * 60 * 1000, function()
-    return not busy() and #missing() == 0
-  end, 1000)
-  vim.list_extend(failed, missing())
 
   if #failed > 0 then
     io.stdout:write("Mason install failed: " .. table.concat(failed, ", ") .. "\n")
