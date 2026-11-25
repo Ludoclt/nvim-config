@@ -29,8 +29,6 @@ if [[ "${SMOKE_OFFLINE:-0}" != 1 ]]; then
   echo "==> Mason packages"
   (cd "$repo" && nvim --headless -c "luafile tests/install-tools.lua")
   echo "==> treesitter parsers"
-  # Parser builds interrupted when an earlier step quit leave broken files.
-  rm -rf "$XDG_CACHE_HOME"/nvim/tree-sitter-*
   nvim --headless \
     "+lua require('nvim-treesitter').install(LazyVim.opts('nvim-treesitter').ensure_installed):wait(600000)" +qa
 fi
