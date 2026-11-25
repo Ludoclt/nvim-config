@@ -28,7 +28,7 @@ core | wl-copy  | wl-clipboard   | wl-clipboard    |        | system clipboard o
 
 # C / C++ (clangd, codelldb and the CMake language server come from Mason)
 cpp | cmake | cmake | cmake | | CMake projects (<leader>m*)
-cpp | bear  | bear  | bear  | | compile_commands.json for Makefile projects (<leader>mb)
+cpp | bear  | Bear  | bear  | | compile_commands.json for Makefile projects (<leader>mb)
 cpp | gdb   | gdb   | gdb   | 14.1 | GDB debug adapter (embedded targets)
 
 # Embedded: skip with `scripts/bootstrap.sh --without embedded`.
