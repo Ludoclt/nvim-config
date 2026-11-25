@@ -3,7 +3,8 @@
 # group | check | zypper (openSUSE) | pacman (Arch) | min version | purpose
 #
 # check: a command that must be on PATH, or `!<shell test>` for anything else.
-# min version: compared with the first x.y.z printed by `<command> --version`.
+# min version: compared with the first x.y[.z] printed by `<command> --version`.
+# Fields are separated by `|`: never use a pipe inside a check.
 # Language servers, linters and formatters are not listed here: Mason
 # installs them per user, at the same versions on every machine.
 
@@ -24,3 +25,16 @@ core | node     | nodejs-default | nodejs          |        | Mason: language se
 core | npm      | npm-default    | npm             |        | Mason: language servers written in JavaScript
 core | !python3 -c 'import venv, ensurepip' | python3 | python | | Mason: tools written in Python (needs venv)
 core | wl-copy  | wl-clipboard   | wl-clipboard    |        | system clipboard on Wayland
+
+# C / C++ (clangd, codelldb and the CMake language server come from Mason)
+cpp | cmake | cmake | cmake | | CMake projects (<leader>m*)
+cpp | bear  | Bear  | bear  | | compile_commands.json for Makefile projects (<leader>mb)
+cpp | gdb   | gdb   | gdb   | 14.1 | GDB debug adapter (embedded targets)
+
+# Embedded: skip with `scripts/bootstrap.sh --without embedded`.
+# openSUSE ships versioned cross compilers: bump gcc15 when a newer one lands.
+embedded | openocd           | openocd                    | openocd              | | GDB server and flashing (<leader>mo, <leader>mf)
+embedded | arm-none-eabi-gcc | cross-arm-none-gcc15       | arm-none-eabi-gcc    | | ARM Cortex-M compiler
+embedded | !test -n "$(find /usr -path '*arm-none-eabi/include/stdlib.h' -print -quit 2>/dev/null)" | cross-arm-none-newlib-devel | arm-none-eabi-newlib | | ARM C library (newlib)
+# A GDB that knows ARM: arm-none-eabi-gdb, gdb-multiarch, or a multi-target gdb.
+embedded | ![ -n "$(command -v arm-none-eabi-gdb gdb-multiarch)" ] && exit 0; gdb -batch -ex 'set architecture arm' | gdb | arm-none-eabi-gdb | | GDB that knows ARM targets

@@ -3,3 +3,4 @@
 -- Add any additional keymaps here
 
 require("config.azerty")
+require("config.templates").setup()

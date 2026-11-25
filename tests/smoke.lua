@@ -1,154 +1,90 @@
 -- Headless smoke test, run by scripts/smoke-test.sh:
 --   nvim --headless -c "luafile tests/smoke.lua"
--- Exits with status 0 when every check passes, 1 otherwise.
+-- Runs every suite in tests/suites/ in name order. Exits with status 0 when
+-- every check passes, 1 otherwise.
 
-local failures = 0
+---@class SmokeTest
+local t = { failures = 0 }
 
-local function check(name, ok, detail)
+--- Record one check.
+---@param name string
+---@param ok any
+---@param detail? string shown on failure
+function t.check(name, ok, detail)
   if ok then
     io.stdout:write(("  ok    %s\n"):format(name))
   else
-    failures = failures + 1
-    io.stdout:write(("  FAIL  %s%s\n"):format(name, detail and (": " .. detail) or ""))
+    t.failures = t.failures + 1
+    io.stdout:write(("  FAIL  %s%s\n"):format(name, detail and detail ~= "" and (": " .. detail) or ""))
   end
 end
 
-local function finish()
-  io.stdout:write(failures == 0 and "smoke test passed\n" or ("%d check(s) failed\n"):format(failures))
-  vim.cmd(failures == 0 and "qall!" or "cquit! 1")
+--- Report a check that cannot run here.
+function t.skip(name, why)
+  io.stdout:write(("  skip  %s (%s)\n"):format(name, why))
+end
+
+--- Wait for `cond`, processing events. Returns its last truthy value.
+---@param ms integer
+---@param cond fun(): any
+function t.wait(ms, cond)
+  local result
+  vim.wait(ms, function()
+    result = cond()
+    return result
+  end, 50)
+  return result
+end
+
+--- Whether an executable needed by a check is there. Missing tools fail the
+--- check, except offline (SMOKE_OFFLINE=1) where they are only skipped.
+---@param name string check name
+---@param exe string
+function t.has(name, exe)
+  if vim.fn.executable(exe) == 1 then
+    return true
+  end
+  if t.offline then
+    t.skip(name, exe .. " not installed")
+  else
+    t.check(name, false, exe .. " not installed")
+  end
+  return false
+end
+
+t.offline = vim.env.SMOKE_OFFLINE == "1"
+t.repo = vim.fn.stdpath("config")
+t.samples = vim.fs.joinpath(t.repo, "tests", "samples")
+
+--- Copy tests/samples/{name} into a fresh temporary directory and cd there.
+---@param name string
+---@return string dir
+function t.sample(name)
+  local dir = vim.fs.joinpath(vim.fn.tempname(), name)
+  vim.fn.mkdir(dir, "p")
+  vim.system({ "cp", "-r", vim.fs.joinpath(t.samples, name) .. "/.", dir }):wait()
+  vim.cmd.cd(dir)
+  return dir
 end
 
 local function run()
-  io.stdout:write("startup\n")
-  check("config loaded on VeryLazy", package.loaded["config.azerty"] ~= nil)
-
-  local missing = {}
-  for _, plugin in ipairs(require("lazy").plugins()) do
-    if not plugin._.installed and plugin.enabled ~= false and plugin.cond ~= false then
-      missing[#missing + 1] = plugin.name
+  local suites = vim.fn.globpath(vim.fs.joinpath(t.repo, "tests", "suites"), "*.lua", false, true)
+  table.sort(suites)
+  for _, file in ipairs(suites) do
+    io.stdout:write(vim.fn.fnamemodify(file, ":t:r") .. "\n")
+    local ok, err = pcall(dofile(file), t)
+    if not ok then
+      t.check("suite ran to the end", false, tostring(err))
     end
+    vim.cmd("silent! %bwipeout!")
+    vim.cmd.cd(t.repo)
   end
-  check("all plugins installed", #missing == 0, table.concat(missing, ", "))
-
-  local errors = {}
-  for _, line in ipairs(vim.split(vim.api.nvim_exec2("messages", { output = true }).output, "\n")) do
-    if line:match("^E%d+:") or line:match("[Ee]rror") then
-      errors[#errors + 1] = line
-    end
-  end
-  check("no errors at startup", #errors == 0, table.concat(errors, " | "))
-
-  if vim.env.SMOKE_SKIP_PARSERS ~= "1" then
-    local absent = {}
-    for _, lang in ipairs(LazyVim.opts("nvim-treesitter").ensure_installed or {}) do
-      if not pcall(vim.treesitter.language.add, lang) then
-        absent[#absent + 1] = lang
-      end
-    end
-    check("treesitter parsers installed", #absent == 0, table.concat(absent, ", "))
-  end
-
-  io.stdout:write("azerty layer\n")
-  local function maps_to(lhs, rhs, mode)
-    local map = vim.fn.maparg(lhs, mode or "n", false, true)
-    return map.rhs == rhs, ("%s -> %s"):format(lhs, tostring(map.rhs))
-  end
-  for _, pair in ipairs({ { "(", "[" }, { ")", "]" }, { "ù", "%" }, { "à", "0" } }) do
-    for _, mode in ipairs({ "n", "x", "o" }) do
-      check(("%s aliases %s (%s)"):format(pair[1], pair[2], mode), maps_to(pair[1], pair[2], mode))
-    end
-  end
-  check("local leader is é", vim.g.maplocalleader == "é")
-  check("<C-ù> opens the terminal", vim.fn.maparg("<C-ù>", "n") ~= "")
-
-  -- `)q` must reach LazyVim's `]q` (next quickfix entry) through the alias.
-  vim.fn.setqflist({}, "r", {
-    items = {
-      { filename = "smoke-a", lnum = 1, text = "a" },
-      { filename = "smoke-b", lnum = 1, text = "b" },
-    },
-  })
-  vim.cmd("silent! cfirst")
-  local function qf_idx()
-    return vim.fn.getqflist({ idx = 0 }).idx
-  end
-  vim.api.nvim_feedkeys(vim.keycode(")q"), "mtx", false)
-  check(")q goes to the next quickfix entry", qf_idx() == 2, "idx " .. qf_idx())
-  vim.api.nvim_feedkeys(vim.keycode("(q"), "mtx", false)
-  check("(q goes back", qf_idx() == 1, "idx " .. qf_idx())
-
-  -- ù jumps to the matching bracket.
-  vim.cmd("enew")
-  vim.api.nvim_buf_set_lines(0, 0, -1, false, { "f(a, (b), c)" })
-  vim.api.nvim_win_set_cursor(0, { 1, 1 })
-  vim.api.nvim_feedkeys(vim.keycode("ù"), "mtx", false)
-  check("ù jumps to the matching bracket", vim.api.nvim_win_get_cursor(0)[2] == 11)
-
-  -- The aliases must not leak into text objects or f/t targets.
-  local function edit(keys, col)
-    vim.api.nvim_buf_set_lines(0, 0, -1, false, { "foo(bar, baz) end" })
-    vim.api.nvim_win_set_cursor(0, { 1, col })
-    vim.api.nvim_feedkeys(vim.keycode(keys), "mtx", false)
-    return vim.api.nvim_get_current_line()
-  end
-  check("di) still deletes inside parentheses", edit("di)", 5) == "foo() end")
-  check("ci( still changes inside parentheses", edit("ci(x<Esc>", 5) == "foo(x) end")
-  check("dt) still deletes up to the parenthesis", edit("dt)", 0) == ") end")
-
-  -- Tables after `<!-- check: global -->` in the cheat sheet list LazyVim
-  -- keymaps: each key of their first column must still exist after updates.
-  io.stdout:write("cheat sheet\n")
-  local sheet = vim.fs.joinpath(vim.fn.stdpath("config"), "docs", "CHEATSHEET.md")
-  local absent, checked, in_table = {}, 0, false
-  for _, line in ipairs(vim.fn.readfile(sheet)) do
-    if line:match("^<!%-%- check: global %-%->") then
-      in_table = true
-    elseif in_table and not line:match("^|") then
-      in_table = false
-    elseif in_table and not line:match("^| %-") and not line:match("^| Keys") then
-      local cell = line:match("^|([^|]*)|")
-      for key in cell:gmatch("`([^`]+)`") do
-        checked = checked + 1
-        if vim.fn.maparg(key, "n") == "" then
-          absent[#absent + 1] = key
-        end
-      end
-    end
-  end
-  check(("%d documented keymaps exist"):format(checked), checked > 0 and #absent == 0, table.concat(absent, " "))
-
-  io.stdout:write("format on save detection\n")
-  local format = require("config.format")
-  local root = vim.fn.tempname()
-  local function project(name, files)
-    local dir = vim.fs.joinpath(root, name)
-    vim.fn.mkdir(vim.fs.joinpath(dir, "src"), "p")
-    for file, text in pairs(files) do
-      vim.fn.writefile(vim.split(text, "\n"), vim.fs.joinpath(dir, file))
-    end
-    return vim.fs.joinpath(dir, "src")
-  end
-  check("no config: off", not format.has_config(project("bare", {})))
-  check(".clang-format: on", format.has_config(project("clang", { [".clang-format"] = "BasedOnStyle: LLVM" })))
-  check("Cargo.toml: on", format.has_config(project("rust", { ["Cargo.toml"] = "[package]" })))
-  check("pyproject with [tool.ruff]: on", format.has_config(project("ruff", { ["pyproject.toml"] = "[tool.ruff]" })))
-  check("pyproject without formatter: off", not format.has_config(project("py", { ["pyproject.toml"] = "[project]" })))
-
-  local bare = vim.fs.joinpath(project("bare2", {}), "main.c")
-  vim.fn.writefile({ "int main(void){return 0;}" }, bare)
-  vim.cmd.edit(bare)
-  check("buffer without config gets autoformat=false", vim.b.autoformat == false)
-  local clang = vim.fs.joinpath(project("clang2", { [".clang-format"] = "BasedOnStyle: LLVM" }), "main.c")
-  vim.fn.writefile({ "int main(void){return 0;}" }, clang)
-  vim.cmd.edit(clang)
-  check("buffer with config inherits the global setting", vim.b.autoformat == nil)
-  vim.fn.delete(root, "rf")
-
-  finish()
+  io.stdout:write(t.failures == 0 and "smoke test passed\n" or ("%d check(s) failed\n"):format(t.failures))
+  vim.cmd(t.failures == 0 and "qall!" or "cquit! 1")
 end
 
 -- `-c` runs before VimEnter: wait for LazyVim to load the lazy config
--- (keymaps, autocmds) on VeryLazy, then run the checks. lazy.nvim fires
+-- (keymaps, autocmds) on VeryLazy, then run the suites. lazy.nvim fires
 -- VeryLazy on UIEnter, which never happens headless: emit it ourselves.
 vim.api.nvim_create_autocmd("VimEnter", {
   once = true,

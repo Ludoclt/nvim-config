@@ -1,0 +1,19 @@
+# clangd parses with clang, which rejects some GCC-only flags that embedded
+# toolchains put in compile_commands.json. Drop them for clangd only: the
+# real build is unchanged.
+CompileFlags:
+  Remove:
+    - -mthumb-interwork
+    - -fstack-usage
+    - -fcyclomatic-complexity
+    - -fno-tree-switch-conversion
+    - -fno-tree-loop-distribute-patterns
+    - -fstrict-volatile-bitfields
+    - -fanalyzer
+    - -specs=*
+    - --specs=*
+    - -mlongcalls
+    - -mtext-section-literals
+Diagnostics:
+  Suppress:
+    - unknown-warning-option

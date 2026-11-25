@@ -11,8 +11,27 @@ shared between my laptop (openSUSE Tumbleweed) and my desktop (Arch Linux).
   as a weekly pull request, tested before they reach `main`.
 - **Format on save, only where the project asks for it** (see below).
 
-Language support (C/C++, embedded, Verilog/VHDL, Python, web, Java, C#, Rust)
-is being added step by step.
+## Languages
+
+| Language                | Language server, tools                                        | Status |
+| ----------------------- | ------------------------------------------------------------- | ------ |
+| C / C++                 | clangd, clang-format, codelldb; make and CMake tasks          | ready  |
+| CMake                   | neocmakelsp, cmakelint, cmake-format                          | ready  |
+| Embedded (Cortex-M...)  | clangd with cross compilers, OpenOCD, GDB remote debugging    | ready  |
+| Verilog / VHDL          |                                                               | next   |
+| Python, web, Java, C#, Rust |                                                           | later  |
+
+How to use them day to day: [docs/CHEATSHEET.md](docs/CHEATSHEET.md), section
+"Build and debug".
+
+### Project templates
+
+`:Template {name}` copies starter files into the current directory, never
+overwriting existing ones:
+
+- `c`: a `.clang-format` (LLVM style, 4-space indent).
+- `embedded`: `.clang-format`, a `.clangd` that drops GCC-only flags clangd
+  rejects, and an `openocd.cfg` with ST-Link, Pico and ESP32 examples.
 
 ## Install on a new machine
 
@@ -28,6 +47,9 @@ git clone git@github.com:Ludoclt/nvim-config.git ~/.config/nvim
 ~/.config/nvim/scripts/bootstrap.sh --install  # install them (zypper or pacman)
 nvim                                           # plugins install on first launch
 ```
+
+`bootstrap.sh --without embedded` skips a package group (groups are the
+first column of `scripts/packages.txt`).
 
 The terminal needs a [Nerd Font](https://www.nerdfonts.com/) for icons.
 
@@ -48,11 +70,12 @@ Language servers and tools are installed by Mason on first use (`:Mason`).
 
 LazyVim formats every file on save. On other people's projects that rewrites
 whole files and pollutes the diff, so here format on save only runs when the
-project has a formatter config, found by walking up from the file:
-`.clang-format`, `rustfmt.toml` or `Cargo.toml`, `ruff.toml` or a
-`pyproject.toml` with `[tool.ruff]`/`[tool.black]`, a Prettier or Biome
-config, `stylua.toml`, `.csharpierrc`. The full list is in
-`lua/config/format.lua`.
+project has a config for the formatter of that filetype, found by walking up
+from the file: `.clang-format` for C/C++, `.cmake-format.*` for CMake,
+`rustfmt.toml` or `Cargo.toml` for Rust, `ruff.toml` or a `pyproject.toml`
+with `[tool.ruff]`/`[tool.black]` for Python, a Prettier or Biome config for
+web files, `stylua.toml` for Lua, `.csharpierrc` for C#. Other filetypes are
+not formatted on save. The rules are in `lua/config/format.lua`.
 
 - `<leader>cf` formats by hand, anywhere.
 - `<leader>uF` toggles format on save for the current buffer (use it to turn
@@ -65,12 +88,15 @@ config, `stylua.toml`, `.csharpierrc`. The full list is in
 init.lua                 entry point
 lazy-lock.json           pinned plugin versions
 lazyvim.json             enabled LazyVim extras (:LazyExtras)
-lua/config/              options, keymaps, autocmds, AZERTY layer, format rule
-lua/plugins/             plugin specs, one file per area
+lua/config/              options, keymaps, autocmds, AZERTY layer, format rule,
+                         :Template command
+lua/plugins/             plugin specs, one file per area (cpp.lua, embedded.lua)
+templates/               files copied by :Template
 scripts/bootstrap.sh     system packages (scripts/packages.txt)
 scripts/sync.sh          pull + install locked plugin versions
 scripts/smoke-test.sh    headless test, also run by CI
-tests/smoke.lua          the checks
+tests/smoke.lua          test runner; checks in tests/suites/, sample projects
+                         in tests/samples/
 docs/                    cheat sheet, AZERTY layer reference
 ```
 
@@ -81,10 +107,14 @@ scripts/smoke-test.sh
 ```
 
 Runs Neovim headless in isolated directories under `.tests/` (it never touches
-the real `~/.local/share/nvim`), installs the locked plugins and parsers, then
-checks startup errors, the AZERTY aliases, the keymaps listed in the cheat
-sheet and the format rule. CI runs it on
-every push to `main` and on every pull request.
+the real `~/.local/share/nvim`), installs the locked plugins, parsers and
+Mason packages, then runs the suites in `tests/suites/`: startup errors, the
+AZERTY aliases, the keymaps listed in the cheat sheet, the format rule, and
+per language the language servers, build tasks and debugging on sample
+projects. CI runs it on every push to `main` and on every pull request.
+
+`SMOKE_OFFLINE=1 scripts/smoke-test.sh` skips the downloads (parsers, Mason)
+and the checks that need them.
 
 ## One-time GitHub setting
 

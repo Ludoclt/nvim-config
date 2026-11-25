@@ -238,7 +238,66 @@ shows which ones).
 | `<leader>gf`       |             | history of the current file                 |
 | `<leader>gB`       |             | open the line on GitHub                     |
 
-## 9. Terminal, sessions, toggles
+## 9. Build and debug
+
+Build keys work the same in CMake projects (cmake-tools) and Makefile
+projects. Both run as overseer tasks, and compile errors land in the
+quickfix list, which opens when a build fails: walk the errors with `)q` /
+`(q`.
+
+<!-- check: global -->
+| Keys           | Does                                                         |
+| -------------- | ------------------------------------------------------------ |
+| `<leader>mm`   | build: CMake target `all` (or the one picked with `<leader>mT`), or `make -j` |
+| `<leader>mc`   | clean                                                        |
+| `<leader>mr`   | run the CMake launch target, or pick a task                  |
+| `<leader>mg`   | CMake: configure (writes `compile_commands.json`)            |
+| `<leader>mt`   | CMake: build type (Debug, Release...)                        |
+| `<leader>mT`   | CMake: build target                                          |
+| `<leader>ml`   | CMake: launch target                                         |
+| `<leader>md`   | CMake: debug the launch target                               |
+| `<leader>mb`   | Makefile: `bear -- make`, writes `compile_commands.json`     |
+| `<leader>mo`   | embedded: start the OpenOCD GDB server                       |
+| `<leader>mf`   | embedded: flash an ELF with OpenOCD                          |
+| `<leader>oo`   | run any task (make targets, npm scripts, VS Code tasks.json) |
+| `<leader>ow`   | task list: output, restart, stop                             |
+
+clangd needs `compile_commands.json` to understand a project: CMake writes
+it on configure, `bear -- make` does it for Makefiles. `<leader>ch` switches
+between a source file and its header.
+
+<!-- check: global -->
+| Keys           | Does                                                         |
+| -------------- | ------------------------------------------------------------ |
+| `<leader>db`   | toggle a breakpoint (`<leader>dB`: with a condition)         |
+| `<leader>dc`   | start or continue (asks which configuration)                 |
+| `<leader>dO`   | step over                                                    |
+| `<leader>di`   | step into                                                    |
+| `<leader>do`   | step out                                                     |
+| `<leader>dC`   | run to the cursor                                            |
+| `<leader>dP`   | pause                                                        |
+| `<leader>dt`   | terminate                                                    |
+| `<leader>du`   | toggle the debugger UI (variables, stack, watches)           |
+| `<leader>de`   | evaluate the expression under the cursor or the selection    |
+| `<leader>dr`   | toggle the REPL                                              |
+
+In the REPL of a GDB session, GDB commands work as they are:
+`monitor reset halt`, `load`, `x/8xw 0x20000000`, `info registers`.
+
+### Embedded workflow
+
+1. `:Template embedded` in the project root: `openocd.cfg`, `.clangd`
+   (drops GCC-only flags clangd rejects) and `.clang-format`. Edit
+   `openocd.cfg` for your probe and chip.
+2. Build (`<leader>mm`), then `<leader>mb` or CMake configure for
+   `compile_commands.json`.
+3. `<leader>mf` flashes, then `<leader>mo` starts the GDB server. Only one
+   OpenOCD can hold the probe: while the server runs, reflash from the
+   debugger REPL with `load` instead.
+4. `<leader>dc` > "Embedded: attach to OpenOCD": breakpoints, stepping and
+   variables, as on a PC.
+
+## 10. Terminal, sessions, toggles
 
 <!-- check: global -->
 | Keys               | Does                                                  |
@@ -262,7 +321,7 @@ shows which ones).
 
 In the terminal, press `<Esc>` twice to get Normal mode (to scroll or copy).
 
-## 10. Advanced
+## 11. Advanced
 
 ### Repeat and jump back
 
