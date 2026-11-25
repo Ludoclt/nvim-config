@@ -80,6 +80,29 @@ M.rules = {
     files = { "stylua.toml", ".stylua.toml" },
   },
   {
+    -- flags for verible-verilog-format, one per line (see :Template verilog)
+    filetypes = { "verilog", "systemverilog" },
+    files = { ".verible-format" },
+  },
+  {
+    -- the files VSG reads its configuration from
+    filetypes = { "vhdl" },
+    files = {
+      "vsg_config.yaml",
+      "vsg_config.yml",
+      "vsg_config.json",
+      "vsg.yaml",
+      "vsg.yml",
+      "vsg.json",
+      ".vsg_config.yaml",
+      ".vsg_config.yml",
+      ".vsg_config.json",
+      ".vsg.yaml",
+      ".vsg.yml",
+      ".vsg.json",
+    },
+  },
+  {
     filetypes = { "cs" },
     files = { ".csharpierrc", ".csharpierrc.json", ".csharpierrc.yaml" },
   },

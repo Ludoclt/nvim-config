@@ -1,0 +1,8 @@
+# Flags for verible-verilog-format, read by Neovim when formatting files of
+# this project (and format on save turns on when this file exists). All flags:
+#   verible-verilog-format --helpfull
+--indentation_spaces=4
+--column_limit=120
+--assignment_statement_alignment=align
+--port_declarations_alignment=align
+--named_port_alignment=align

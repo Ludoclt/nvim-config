@@ -297,6 +297,34 @@ In the REPL of a GDB session, GDB commands work as they are:
 4. `<leader>dc` > "Embedded: attach to OpenOCD": breakpoints, stepping and
    variables, as on a PC.
 
+### Verilog, SystemVerilog and VHDL
+
+Diagnostics come from several tools, each named in the message:
+
+| Source      | Files            | Reports                                                  |
+| ----------- | ---------------- | -------------------------------------------------------- |
+| `verible`   | `.sv` `.v`       | syntax errors and style rules (`.rules.verible_lint`)    |
+| `verilator` | `.sv` `.v`       | widths, undriven or unused signals, missing modules      |
+| `vhdl ls`   | `.vhd` `.vhdl`   | syntax and semantic errors (undeclared names, types...)  |
+| `vsg`       | `.vhd` `.vhdl`   | style issues, only in projects with a VSG config         |
+
+| Command / key        | Does                                                       |
+| -------------------- | ---------------------------------------------------------- |
+| `:VeribleFilelist`   | write `verible.filelist`: `gd` then works across files     |
+| `:Template verilog`  | `.rules.verible_lint`, `.verible-format`, `verilator.f`    |
+| `:Template vhdl`     | `vhdl_ls.toml` (libraries), `vsg_config.yaml`              |
+| `<leader>cf`         | format: verible-verilog-format, or VSG for VHDL            |
+
+- Verilator finds modules in the same directory as the file. For other
+  directories, include paths or defines, edit `verilator.f` (`-y rtl`,
+  `+incdir+include`, `+define+X`).
+- vhdl_ls works on a single file without configuration. For a multi-file
+  design, list the files in `vhdl_ls.toml` so that it resolves entities and
+  packages across them.
+- Format on save turns on with `.verible-format` (Verilog) or a VSG config
+  (VHDL). VSG's fixes are applied even when issues it cannot fix remain:
+  those stay as `vsg` diagnostics.
+
 ## 10. Terminal, sessions, toggles
 
 <!-- check: global -->

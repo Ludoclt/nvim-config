@@ -10,7 +10,7 @@ runs:
           | sudo tar xz -C /opt
         echo /opt/nvim-linux-x86_64/bin >> "$GITHUB_PATH"
         sudo apt-get update -q
-        sudo apt-get install -y -q ripgrep fd-find gdb gdbserver bear
+        sudo apt-get install -y -q ripgrep fd-find gdb gdbserver bear verilator
         sudo ln -sf "$(command -v fdfind)" /usr/local/bin/fd
         npm install -g tree-sitter-cli
         /opt/nvim-linux-x86_64/bin/nvim --version | head -n1
