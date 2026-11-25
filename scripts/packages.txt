@@ -38,3 +38,7 @@ embedded | arm-none-eabi-gcc | cross-arm-none-gcc15       | arm-none-eabi-gcc   
 embedded | !test -n "$(find /usr -path '*arm-none-eabi/include/stdlib.h' -print -quit 2>/dev/null)" | cross-arm-none-newlib-devel | arm-none-eabi-newlib | | ARM C library (newlib)
 # A GDB that knows ARM: arm-none-eabi-gdb, gdb-multiarch, or a multi-target gdb.
 embedded | ![ -n "$(command -v arm-none-eabi-gdb gdb-multiarch)" ] && exit 0; gdb -batch -ex 'set architecture arm' | gdb | arm-none-eabi-gdb | | GDB that knows ARM targets
+
+# Verilog / SystemVerilog lint (verible, vhdl_ls and VSG come from Mason).
+# Skip with `scripts/bootstrap.sh --without hdl`.
+hdl | verilator | verilator | verilator | 5.0 | Verilator lint (widths, undriven, missing modules)
