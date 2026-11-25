@@ -1,0 +1,6 @@
+# VHDL Style Guide configuration: Neovim formats VHDL files on save with
+# `vsg --fix` when this file exists. All options:
+#   https://vhdl-style-guide.readthedocs.io/en/latest/configuring.html
+rule:
+  global:
+    indent_size: 2

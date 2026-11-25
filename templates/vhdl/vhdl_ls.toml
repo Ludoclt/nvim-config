@@ -1,0 +1,10 @@
+# Libraries of this project for vhdl_ls, Neovim's VHDL language server.
+# Paths are relative to this file, globs are allowed. `work` is not a valid
+# name here: put the design in a named library (defaultlib if you use only
+# one), and the standard ieee/std libraries are always available.
+[libraries]
+defaultlib.files = ["**/*.vhd", "**/*.vhdl"]
+
+# Third-party code: analysed, but its warnings are hidden.
+# vendor.files = ["ip/**/*.vhd"]
+# vendor.is_third_party = true

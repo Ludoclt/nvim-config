@@ -1,0 +1,6 @@
+# Verible lint rules for this project, read by Neovim's Verilog language server
+# (searched upward from each file). One rule per line: +rule enables, -rule
+# disables, rule=option:value configures. All rules and their options:
+#   verible-verilog-lint --help_rules=all
++line-length=length:120
+-explicit-parameter-storage-type
