@@ -7,8 +7,8 @@ local function main()
   require("lazy").load({ plugins = { "mason.nvim", "mason-lspconfig.nvim" } })
   local registry = require("mason-registry")
 
-  local wanted = {}
-  local pending, failed = 0, {}
+  local wanted, packages = {}, {}
+  local failed = {}
   local refreshed = false
   local function install_all()
     -- The server -> package mapping comes from the registry: build it now.
@@ -30,15 +30,13 @@ local function main()
       local ok, pkg = pcall(registry.get_package, name)
       if not ok then
         failed[#failed + 1] = name .. " (not in the registry)"
-      elseif not pkg:is_installed() and not pkg:is_installing() then
-        pending = pending + 1
-        io.stdout:write("installing " .. name .. "\n")
-        pkg:install({}, function(success, err)
-          pending = pending - 1
-          if not success then
-            failed[#failed + 1] = ("%s (%s)"):format(name, tostring(err))
-          end
-        end)
+      else
+        packages[#packages + 1] = pkg
+        -- LazyVim may already be installing it in the background: then just wait.
+        if not pkg:is_installed() and not pkg:is_installing() then
+          io.stdout:write("installing " .. name .. "\n")
+          pkg:install({})
+        end
       end
     end
   end
@@ -50,11 +48,30 @@ local function main()
     end
     refreshed = true
   end))
+  local function busy()
+    for _, pkg in ipairs(packages) do
+      if pkg:is_installing() then
+        return true
+      end
+    end
+    return false
+  end
   vim.wait(20 * 60 * 1000, function()
-    return refreshed and pending == 0
+    return refreshed
+  end, 200)
+  vim.wait(1000, function()
+    return false
+  end)
+  vim.wait(20 * 60 * 1000, function()
+    return not busy()
   end, 500)
+  for _, pkg in ipairs(packages) do
+    if not pkg:is_installed() then
+      failed[#failed + 1] = pkg.name .. " (install failed, see :MasonLog)"
+    end
+  end
 
-  if #failed > 0 or pending > 0 then
+  if #failed > 0 then
     io.stdout:write("Mason install failed: " .. table.concat(failed, ", ") .. "\n")
     vim.cmd("cquit! 1")
   end
